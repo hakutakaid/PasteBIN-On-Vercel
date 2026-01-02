@@ -1,0 +1,27 @@
+/* assets/css/utilities.css */
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #7000ff;
+  border-radius: 2px;
+}
+
+/* Clip Paths (Cyberpunk Shapes) */
+.clip-btn { 
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); 
+}
+
+.clip-path-cyber { 
+  clip-path: polygon(0 20px, 20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%); 
+}
+
+/* Small Clip (untuk alert buttons) */
+.clip-btn-small { 
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); 
+}

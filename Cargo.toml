@@ -1,0 +1,23 @@
+[package]
+name = "pastebin-vercel"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "api"
+path = "api/main.rs"
+
+[dependencies]
+axum = "0.8" 
+tokio = { version = "1", features = ["full"] }
+
+vercel_runtime = { version = "2.1", features = ["axum"] }
+tower = { version = "0.4", features = ["util"] }
+http-body-util = "0.1" 
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+redis = { version = "0.27", features = ["tokio-comp", "tokio-rustls-comp", "connection-manager"] }
+
+uuid = { version = "1", features = ["v4"] }

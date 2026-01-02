@@ -1,0 +1,17 @@
+/* assets/css/main.css */
+
+/* 1. Import Custom CSS (HARUS DI PALING ATAS) */
+@import './animations.css';
+@import './utilities.css';
+
+/* 2. Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. Global Styles */
+body {
+  background-color: #020205;
+  color: white;
+  overflow-x: hidden; /* Mencegah scroll samping di HP */
+}

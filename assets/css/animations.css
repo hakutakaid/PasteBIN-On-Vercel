@@ -1,0 +1,55 @@
+/* assets/css/animations.css */
+
+/* --- Keyframes --- */
+@keyframes glitch {
+  2%, 64% { transform: translate(2px,0) skew(0deg); }
+  4%, 60% { transform: translate(-2px,0) skew(0deg); }
+  62% { transform: translate(0,0) skew(5deg); }
+}
+
+@keyframes scan {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Animation Classes --- */
+.animate-glitch {
+  animation: glitch 1s linear infinite;
+}
+
+.animate-scan {
+  animation: scan 4s linear infinite;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* --- Transitions (Vue Transition) --- */
+/* Modal Transitions */
+.modal-enter-active, .modal-leave-active { transition: all 0.3s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.9); }
+
+/* Fade Slide Transitions */
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.5s ease; }
+.fade-slide-enter-from { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }
+.fade-slide-leave-to { opacity: 0; transform: translateY(-20px) scale(1.05); filter: blur(10px); }

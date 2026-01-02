@@ -1,0 +1,8 @@
+dontrun
+.vercel
+*.bak
+.env
+node_modules
+package-lock.json
+.output
+.nuxt
