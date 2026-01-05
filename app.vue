@@ -21,9 +21,10 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const copied = ref(false)
 const editingId = ref<string | null>(null)
 
-const files = ref<Array<{ id: string, key: string }>>([])
+const files = ref<Array<{ id: string, key: string, ttl: number }>>([])
 const loadingFiles = ref(false)
 const fileToDelete = ref<string | null>(null)
+const selectedTtl = ref<number>(0) // 0 = permanent
 
 const alert = ref({ show: false, title: '', message: '', type: 'info' as any })
 
@@ -79,6 +80,18 @@ const resetEditState = () => {
   fileContent.value = ''
   fileName.value = ''
   uploadResult.value = null
+  selectedTtl.value = 0 // Reset to permanent
+}
+
+const formatTtl = (ttl: number): string => {
+  if (ttl === -1) return '∞ Permanent'
+  if (ttl <= 0) return 'Expired'
+  const days = Math.floor(ttl / 86400)
+  const hours = Math.floor((ttl % 86400) / 3600)
+  const minutes = Math.floor((ttl % 3600) / 60)
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${minutes}m`
 }
 
 const fetchFiles = async () => {
@@ -174,13 +187,21 @@ const handleSaveOrUpload = async () => {
       // Logic Update
       const data: any = await $fetch('/api/update', {
         method: 'POST',
-        body: { id: editingId.value, content: fileContent.value }
+        body: { 
+          id: editingId.value, 
+          content: fileContent.value,
+          ttl: selectedTtl.value > 0 ? selectedTtl.value : null // null = permanent
+        }
       })
       resultId = data.id
-      showAlert('UPDATE SUCCESS', `File ${resultId} overwritten. TTL reset to 24h.`, 'success')
+      const ttlText = selectedTtl.value > 0 ? formatTtl(selectedTtl.value) : 'Permanent'
+      showAlert('UPDATE SUCCESS', `File ${resultId} overwritten. TTL: ${ttlText}`, 'success')
     } else {
       // Logic Upload Baru (dengan Custom Filename jika ada)
-      const payload: any = { content: fileContent.value }
+      const payload: any = { 
+        content: fileContent.value,
+        ttl: selectedTtl.value > 0 ? selectedTtl.value : null // null = permanent
+      }
       if (fileName.value) payload.filename = fileName.value
 
       const data: any = await $fetch('/api/upload', {
@@ -188,7 +209,8 @@ const handleSaveOrUpload = async () => {
         body: payload
       })
       resultId = data.id
-      showAlert('UPLOAD SUCCESS', 'Script stored in Redis. Raw link generated.', 'success')
+      const ttlText = selectedTtl.value > 0 ? formatTtl(selectedTtl.value) : 'Permanent'
+      showAlert('UPLOAD SUCCESS', `Script stored. TTL: ${ttlText}`, 'success')
     }
     const domain = window.location.origin
     uploadResult.value = `${domain}/raw/${resultId}`
@@ -304,6 +326,21 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKeydown) })
                     </button>
                   </div>
 
+                  <!-- TTL Selector -->
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs font-mono text-slate-400 whitespace-nowrap">EXPIRY:</span>
+                    <div class="flex flex-wrap gap-2">
+                      <button 
+                        v-for="opt in [{label: '∞ PERM', value: 0}, {label: '1H', value: 3600}, {label: '24H', value: 86400}, {label: '7D', value: 604800}, {label: '30D', value: 2592000}]" 
+                        :key="opt.value"
+                        @click="selectedTtl = opt.value"
+                        :class="['px-3 py-1.5 rounded text-xs font-mono border transition-all', selectedTtl === opt.value ? 'bg-cyber-primary/20 border-cyber-primary text-cyber-primary' : 'bg-black/30 border-white/10 text-slate-400 hover:border-cyber-primary/50']"
+                      >
+                        {{ opt.label }}
+                      </button>
+                    </div>
+                  </div>
+
                   <div class="relative group/editor">
                     <textarea v-model="fileContent" rows="12" placeholder="// Paste script or text content here..." class="w-full bg-black/50 border border-white/10 rounded-lg p-4 font-mono text-xs md:text-sm text-slate-300 focus:outline-none focus:border-cyber-primary focus:bg-black/80 transition-all resize-y selection:bg-cyber-primary/30 custom-scrollbar"></textarea>
                   </div>
@@ -360,7 +397,9 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKeydown) })
                       </div>
                       <div class="min-w-0">
                         <p class="text-sm font-mono text-white truncate w-full">ID: <span class="text-cyber-primary">{{ file.id }}</span></p>
-                        <p class="text-[10px] text-slate-500 truncate">key: {{ file.key }}</p>
+                        <p class="text-[10px] truncate" :class="file.ttl === -1 ? 'text-green-400' : 'text-yellow-400'">
+                          TTL: {{ formatTtl(file.ttl) }}
+                        </p>
                       </div>
                     </div>
 

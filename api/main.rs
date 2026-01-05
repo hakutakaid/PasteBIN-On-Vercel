@@ -24,12 +24,14 @@ struct AppState {
 struct CreatePaste {
     content: String,
     filename: Option<String>,
+    ttl: Option<i64>, // TTL in seconds: 0 or None = permanent, >0 = expire after N seconds
 }
 
 #[derive(Deserialize)]
 struct UpdatePaste {
     id: String,
     content: String,
+    ttl: Option<i64>, // TTL in seconds: 0 or None = permanent, >0 = expire after N seconds
 }
 
 #[derive(Serialize)]
@@ -117,7 +119,11 @@ async fn create_paste(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis Connect Error: {}", e)).into_response(),
     };
 
-    let result: Result<(), redis::RedisError> = conn.set_ex(&id, &payload.content, 86400).await;
+    // TTL Logic: 0 or None = permanent (no expiry), >0 = expire after N seconds
+    let result: Result<(), redis::RedisError> = match payload.ttl {
+        Some(ttl) if ttl > 0 => conn.set_ex(&id, &payload.content, ttl as u64).await,
+        _ => conn.set(&id, &payload.content).await, // Permanent - no TTL
+    };
 
     match result {
         Ok(_) => (),
@@ -136,7 +142,11 @@ async fn update_paste(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, format!("Redis Connect Error: {}", e)).into_response(),
     };
 
-    let result: Result<(), redis::RedisError> = conn.set_ex(&payload.id, &payload.content, 86400).await;
+    // TTL Logic: 0 or None = permanent (no expiry), >0 = expire after N seconds
+    let result: Result<(), redis::RedisError> = match payload.ttl {
+        Some(ttl) if ttl > 0 => conn.set_ex(&payload.id, &payload.content, ttl as u64).await,
+        _ => conn.set(&payload.id, &payload.content).await, // Permanent - no TTL
+    };
 
     match result {
         Ok(_) => (StatusCode::OK, Json(json!({ "success": true, "id": payload.id }))).into_response(),
@@ -174,12 +184,16 @@ async fn list_pastes(
         Err(_) => vec![],
     };
 
-    let files: Vec<serde_json::Value> = keys.into_iter().map(|k| {
-        json!({
+    let mut files: Vec<serde_json::Value> = Vec::new();
+    for k in keys {
+        // Get TTL for each key (-1 = no expiry/permanent, -2 = key doesn't exist)
+        let ttl: i64 = conn.ttl(&k).await.unwrap_or(-2);
+        files.push(json!({
             "id": k,
-            "key": k
-        })
-    }).collect();
+            "key": k,
+            "ttl": ttl // -1 = permanent, >0 = seconds remaining
+        }));
+    }
 
     (StatusCode::OK, Json(json!({ "success": true, "files": files }))).into_response()
 }
